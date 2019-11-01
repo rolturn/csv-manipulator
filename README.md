@@ -1,4 +1,4 @@
-# csvToJSON
+# csv-manipulator
 
 ## This repo has dependencies on fs and lodash run:
 
