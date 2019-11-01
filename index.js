@@ -1,8 +1,15 @@
 const fs = require('fs');
 const _ = require('lodash');
 
-const csvToJSON = (inputFile, options = {}) => {
+/**
+ * Convert CSV to JS Object Array
+ * 
+ * @param {string} inputFile - path desired for output
+ * @returns {array}
+ */
+const convertToArray = (inputFile, options = {}) => {
     const opts = _.defaults(options, {
+        // use headers as propKeys
         hasHeaders: true,
     })
 
@@ -18,7 +25,17 @@ const csvToJSON = (inputFile, options = {}) => {
     return output
 }
 
+/**
+ * Exports Object Array to CSV file
+ * 
+ * @param {string} outputFile - path desired for output
+ * @param {array} data - Object array 
+ * @returns {boolean}
+ */
 const makeCSVFile = (outputFile, data) => {
+    // cleanup blank lines
+    data = _.filter(data, null)
+
     let headers = []
     _.forEach(data, (value) => {
         headers = _.uniq(_.union(headers, _.keysIn(value)))
@@ -34,16 +51,30 @@ const makeCSVFile = (outputFile, data) => {
         }
         output += result.join(',') +  '\r\n'
     })
-    output = output.replace(/^\s*[\r\n]/gm, '')
 
-    fs.writeFile(outputFile, output, function(err) {
-        if(err) {
-            return console.log(err);
-        }  
-        console.log("The CSV file was saved to " + outputFile + "!");
-    });
+    try {
+        fs.writeFile(outputFile, output, function(err) {
+            if(err) {
+                return console.log(err);
+            }  
+            console.log("The CSV file was saved to " + outputFile + "!");
+        });
+    
+    }
+    catch (err) {
+        console.log(err)
+        return false
+    }
+    return true
 }
 
+/**
+ * Exports Object Array to JSON file
+ * 
+ * @param {string} outputFile - path desired for output
+ * @param {array} data - Object Array 
+ * @returns {boolean}
+ */
 const makeJSONFile = (outputFile, data) => {
     // cleanup null spaces in array
     data = _.filter(data, null)
@@ -52,26 +83,40 @@ const makeJSONFile = (outputFile, data) => {
         data = JSON.stringify(data)
     }
 
-    fs.writeFile(outputFile, data, function(err) {
-        if(err) {
-            return console.log(err);
-        }  
-        console.log("The JSON file was saved to " + outputFile + "!");
-    });
+    try {
+        fs.writeFile(outputFile, data, function(err) {
+            if(err) {
+                return console.error(err);
+            }  
+            console.log("The JSON file was saved to " + outputFile + "!");
+        });    
+    }
+    catch (err) {
+        console.log(err)
+        return false
+    }
+    return true
 }
 
+/**
+ * Modify Property Keys to be Camelcase
+ * 
+ * @param {object} obj
+ * @returns {object} - returns a modified clone of the with camelcase for proerty keys
+ */
 const camelKeys = (obj) => {
-    _.mapKeys(obj, (value, key) => {
+    const objClone = _.cloneDeep(obj)
+    _.mapKeys(objClone, (value, key) => {
         const camelKey = _.camelCase(key)
-        delete obj[key]
-        obj[camelKey] = value
+        delete objClone[key]
+        objClone[camelKey] = value
     })
-    return obj
+    return objClone
 }
 
 module.exports = {
-    camelKeys,
+    convertToArray,
     makeCSVFile,
-    csvToJSON,
-    makeJSONFile
+    makeJSONFile,
+    camelKeys,
 }
